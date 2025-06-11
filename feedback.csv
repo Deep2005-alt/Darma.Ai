@@ -1,0 +1,11 @@
+timestamp,patient_id,disease,original_probability,feedback_status,correction_text
+2025-04-25 00:45:48,P20250425004127,Acne,35,correct,
+2025-04-25 00:45:48,P20250425004127,Rashes,20,wrong,due to constant rubbing of the skin 
+2025-04-25 00:45:48,P20250425004127,Hyperpigmentation,45,wrong,Evaluation of skin colour variations and patients reported due severe burns
+2025-04-25 10:30:50,P20250425103029,Acne,35,correct,
+2025-04-25 10:30:50,P20250425103029,Rashes,20,correct,
+2025-04-25 11:20:36,P20250425111941,Acne,35,wrong,
+2025-04-25 11:20:36,P20250425111941,Rashes,20,wrong,
+2025-04-26 13:51:59,P20250426135107,Acne,35,wrong,Presence of inflammatory papules and pustules 
+2025-04-26 13:51:59,P20250426135107,Rashes,20,wrong,skin texture is vary bad
+2025-04-26 13:51:59,P20250426135107,Hyperpigmentation,45,wrong,skin color variations is not the reason 

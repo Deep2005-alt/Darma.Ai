@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Derma.AI - Prediction History</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .confidence-high {
+            color: #27ae60;
+        }
+
+        .confidence-medium {
+            color: #f39c12;
+        }
+
+        .confidence-low {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prediction History</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Patient ID</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Predicted Condition</th>
+                    <th>Confidence Score</th>
+                    <th>Probabilities</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prediction in predictions %}
+                <tr>
+                    <td>{{ prediction.timestamp }}</td>
+                    <td>{{ prediction.patient_id }}</td>
+                    <td>{{ prediction.age }}</td>
+                    <td>{{ prediction.gender }}</td>
+                    <td>{{ prediction.predicted_condition }}</td>
+                    <td class="confidence-{{ 'high' if prediction.confidence_score >= 70 else 'medium' if prediction.confidence_score >= 40 else 'low' }}">
+                        {{ prediction.confidence_score }}%
+                    </td>
+                    <td>
+                        Acne: {{ prediction.acne_probability }}%<br>
+                        Rashes: {{ prediction.rashes_probability }}%<br>
+                        Hyperpigmentation: {{ prediction.hyperpigmentation_probability }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html> 
