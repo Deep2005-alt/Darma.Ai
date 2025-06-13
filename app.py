@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, url_for, redirect, flash
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import os
 import torch
 import torch.nn as nn
@@ -25,8 +25,6 @@ app = Flask(__name__, static_url_path='/static')
 # Configure upload folder
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Load human skin disease model
@@ -76,107 +74,40 @@ dog_disease_info = {
     }
 }
 
-# Human skin condition classes
-human_class_names = ['Acne', 'Eczema', 'Psoriasis', 'Rosacea', 'Melanoma', 'Healthy']
-
-# Human skin condition descriptions and treatments
-human_descriptions = {
-    'Acne': 'A common skin condition that occurs when hair follicles become clogged with oil and dead skin cells.',
-    'Eczema': 'A condition that makes your skin red and itchy, often appearing as patches.',
-    'Psoriasis': 'A skin disorder that causes skin cells to multiply up to 10 times faster than normal.',
-    'Rosacea': 'A common skin condition that causes redness and visible blood vessels in your face.',
-    'Melanoma': 'A serious form of skin cancer that begins in cells known as melanocytes.',
-    'Healthy': 'No concerning skin conditions detected.'
-}
-
-human_treatments = {
-    'Acne': '''
-        <ul class="list-disc pl-5 space-y-2">
-            <li>Topical treatments (benzoyl peroxide, salicylic acid)</li>
-            <li>Antibiotics (oral or topical)</li>
-            <li>Retinoids</li>
-            <li>Hormonal therapy for women</li>
-            <li>Isotretinoin for severe cases</li>
-        </ul>
-    ''',
-    'Eczema': '''
-        <ul class="list-disc pl-5 space-y-2">
-            <li>Regular moisturizing</li>
-            <li>Topical corticosteroids</li>
-            <li>Antihistamines for itching</li>
-            <li>Phototherapy</li>
-            <li>Avoiding triggers</li>
-        </ul>
-    ''',
-    'Psoriasis': '''
-        <ul class="list-disc pl-5 space-y-2">
-            <li>Topical treatments (corticosteroids, vitamin D analogues)</li>
-            <li>Light therapy</li>
-            <li>Systemic medications</li>
-            <li>Biologic drugs</li>
-            <li>Lifestyle changes</li>
-        </ul>
-    ''',
-    'Rosacea': '''
-        <ul class="list-disc pl-5 space-y-2">
-            <li>Topical medications</li>
-            <li>Oral antibiotics</li>
-            <li>Laser therapy</li>
-            <li>Trigger avoidance</li>
-            <li>Gentle skin care</li>
-        </ul>
-    ''',
-    'Melanoma': '''
-        <ul class="list-disc pl-5 space-y-2">
-            <li>Surgical removal</li>
-            <li>Immunotherapy</li>
-            <li>Targeted therapy</li>
-            <li>Chemotherapy</li>
-            <li>Radiation therapy</li>
-        </ul>
-    ''',
-    'Healthy': '''
-        <ul class="list-disc pl-5 space-y-2">
-            <li>Maintain a regular skincare routine</li>
-            <li>Use sunscreen daily</li>
-            <li>Stay hydrated</li>
-            <li>Eat a balanced diet</li>
-            <li>Get regular exercise</li>
-        </ul>
-    '''
-}
-
 def load_models():
-    global animal_model, human_model
+    global human_model, animal_model
     try:
-        # Load animal skin disease model
-        if os.path.exists('models/animal_skin_model.pth'):
+        if os.path.exists(HUMAN_MODEL_PATH):
+            logger.info("Loading human skin disease model...")
+            # Initialize the human model architecture first
+            human_model = models.resnet50(weights=None)
+            num_ftrs = human_model.fc.in_features
+            human_model.fc = nn.Linear(num_ftrs, 7)  # Assuming 7 classes for human skin diseases
+            
+            # Load the state dictionary
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            human_model.load_state_dict(torch.load(HUMAN_MODEL_PATH, map_location=device))
+            human_model.to(device)
+            human_model.eval()
+            logger.info("Human skin disease model loaded successfully")
+        
+        if os.path.exists(ANIMAL_MODEL_PATH):
+            logger.info("Loading animal skin disease model...")
+            # Load the dog skin disease model
             animal_model = models.resnet50(weights=None)
             num_ftrs = animal_model.fc.in_features
             animal_model.fc = nn.Linear(num_ftrs, len(dog_class_names))
-            animal_model.load_state_dict(torch.load('models/animal_skin_model.pth', map_location=torch.device('cpu')))
-            animal_model.eval()
-            app.logger.info("Animal skin disease model loaded successfully")
-        else:
-            app.logger.warning("Animal skin disease model file not found")
-            animal_model = None
-        
-        # Load human skin disease model
-        if os.path.exists('models/human_skin_model.pth'):
-            human_model = models.resnet50(weights=None)
-            num_ftrs = human_model.fc.in_features
-            human_model.fc = nn.Linear(num_ftrs, len(human_class_names))
-            human_model.load_state_dict(torch.load('models/human_skin_model.pth', map_location=torch.device('cpu')))
-            human_model.eval()
-            app.logger.info("Human skin disease model loaded successfully")
-        else:
-            app.logger.warning("Human skin disease model file not found")
-            human_model = None
             
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            logger.info(f"Using device: {device}")
+            
+            animal_model.load_state_dict(torch.load(ANIMAL_MODEL_PATH, map_location=device))
+            animal_model.to(device)
+            animal_model.eval()
+            logger.info("Animal skin disease model loaded successfully")
     except Exception as e:
-        app.logger.error(f"Error loading models: {str(e)}")
-        animal_model = None
-        human_model = None
+        logger.error(f"Error loading models: {str(e)}")
+        raise
 
 # Load models when app starts
 load_models()
@@ -369,69 +300,59 @@ def dogderma():
     return render_template('DogDerma/home.html')
 
 @app.route('/dogderma/index', methods=['GET', 'POST'])
-def dog_index():
-    if animal_model is None:
-        return render_template('DogDerma/index.html', error="Model not available. Please contact the administrator.")
-    
+def dogderma_index():
     if request.method == 'POST':
-        if 'file' not in request.files:
-            return render_template('DogDerma/index.html', error="No file uploaded")
+        if 'image' not in request.files:
+            return render_template('DogDerma/index.html', error="No file part")
         
-        file = request.files['file']
+        file = request.files['image']
+        
         if file.filename == '':
-            return render_template('DogDerma/index.html', error="No file selected")
+            return render_template('DogDerma/index.html', error="No selected file")
         
-        if file:
-            try:
-                # Save the uploaded file
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        try:
+            image = Image.open(filepath).convert('RGB')
+            transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+            
+            image_tensor = transform(image).unsqueeze(0)
+            
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            
+            image_tensor = image_tensor.to(device)
+            
+            with torch.no_grad():
+                outputs = animal_model(image_tensor)
+                probabilities = torch.nn.functional.softmax(outputs[0], dim=0).cpu().numpy()
                 
-                # Process the image
-                image = Image.open(filepath).convert('RGB')
-                transform = transforms.Compose([
-                    transforms.Resize((224, 224)),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                ])
-                image_tensor = transform(image).unsqueeze(0)
+                predicted_idx = np.argmax(probabilities)
+                predicted_class = dog_class_names[predicted_idx]
+                confidence = probabilities[predicted_idx] * 100
                 
-                # Get prediction
-                with torch.no_grad():
-                    outputs = animal_model(image_tensor)
-                    probabilities = torch.nn.functional.softmax(outputs, dim=1)
-                    predicted_class = torch.argmax(probabilities, dim=1).item()
-                    confidence = probabilities[0][predicted_class].item()
+                chart_img = create_dog_chart(probabilities)
                 
-                # Get class name and description
-                predicted_class_name = dog_class_names[predicted_class]
-                description = dog_disease_info.get(predicted_class_name, {}).get('description', "No description available")
-                treatment = dog_disease_info.get(predicted_class_name, {}).get('treatment', "No treatment information available")
+                disease_description = dog_disease_info.get(predicted_class, {}).get('description', "No information available.")
+                disease_treatment = dog_disease_info.get(predicted_class, {}).get('treatment', "No treatment information available.")
                 
-                # Create probability distribution chart
-                plt.figure(figsize=(10, 6))
-                plt.bar(dog_class_names, probabilities[0].numpy())
-                plt.xticks(rotation=45, ha='right')
-                plt.title('Probability Distribution')
-                plt.tight_layout()
+                return render_template('DogDerma/index.html', 
+                                      prediction=predicted_class,
+                                      confidence=f"{confidence:.1f}",
+                                      chart_img=chart_img,
+                                      image_url=f"/static/uploads/{filename}",
+                                      description=disease_description,
+                                      treatment=disease_treatment)
                 
-                # Save the chart
-                chart_path = os.path.join(app.config['UPLOAD_FOLDER'], 'probability_chart.png')
-                plt.savefig(chart_path)
-                plt.close()
-                
-                return render_template('DogDerma/index.html',
-                                     filename=filename,
-                                     prediction=predicted_class_name,
-                                     confidence=confidence,
-                                     description=description,
-                                     treatment=treatment,
-                                     chart_path='probability_chart.png')
-                
-            except Exception as e:
-                app.logger.error(f"Error processing image: {str(e)}")
-                return render_template('DogDerma/index.html', error="Error processing image")
+        except Exception as e:
+            logger.error(f"Error processing image: {str(e)}")
+            return render_template('DogDerma/index.html', error=f"An error occurred: {str(e)}")
     
     return render_template('DogDerma/index.html')
 
@@ -467,94 +388,6 @@ def dogderma_submit_feedback():
         ])
 
     return render_template('DogDerma/feedback_submitted.html', doctor_name=doctor_name, dog_age=dog_age)
-
-@app.route('/humanderma')
-def human_home():
-    return render_template('HumanSkinDisease/home.html')
-
-@app.route('/humanderma/index', methods=['GET', 'POST'])
-def human_index():
-    if human_model is None:
-        return render_template('HumanSkinDisease/index.html', error="Model not available. Please contact the administrator.")
-    
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return render_template('HumanSkinDisease/index.html', error="No file uploaded")
-        
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('HumanSkinDisease/index.html', error="No file selected")
-        
-        if file:
-            try:
-                # Save the uploaded file
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                
-                # Process the image
-                image = Image.open(filepath).convert('RGB')
-                transform = transforms.Compose([
-                    transforms.Resize((224, 224)),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                ])
-                image_tensor = transform(image).unsqueeze(0)
-                
-                # Get prediction
-                with torch.no_grad():
-                    outputs = human_model(image_tensor)
-                    probabilities = torch.nn.functional.softmax(outputs, dim=1)
-                    predicted_class = torch.argmax(probabilities, dim=1).item()
-                    confidence = probabilities[0][predicted_class].item()
-                
-                # Get class name and description
-                predicted_class_name = human_class_names[predicted_class]
-                description = human_descriptions.get(predicted_class_name, "No description available")
-                treatment = human_treatments.get(predicted_class_name, "No treatment information available")
-                
-                # Create probability distribution chart
-                plt.figure(figsize=(10, 6))
-                plt.bar(human_class_names, probabilities[0].numpy())
-                plt.xticks(rotation=45, ha='right')
-                plt.title('Probability Distribution')
-                plt.tight_layout()
-                
-                # Save the chart
-                chart_path = os.path.join(app.config['UPLOAD_FOLDER'], 'probability_chart.png')
-                plt.savefig(chart_path)
-                plt.close()
-                
-                return render_template('HumanSkinDisease/index.html',
-                                     filename=filename,
-                                     prediction=predicted_class_name,
-                                     confidence=confidence,
-                                     description=description,
-                                     treatment=treatment,
-                                     chart_path='probability_chart.png')
-                
-            except Exception as e:
-                app.logger.error(f"Error processing image: {str(e)}")
-                return render_template('HumanSkinDisease/index.html', error="Error processing image")
-    
-    return render_template('HumanSkinDisease/index.html')
-
-@app.route('/humanderma/about')
-def human_about():
-    return render_template('HumanSkinDisease/about.html')
-
-@app.route('/humanderma/feedback', methods=['POST'])
-def human_feedback():
-    # Handle doctor's feedback
-    doctor_name = request.form.get('doctor_name')
-    patient_age = request.form.get('patient_age')
-    conditions = request.form.getlist('conditions')
-    notes = request.form.get('notes')
-    
-    # Here you would typically save the feedback to a database
-    # For now, we'll just flash a success message
-    flash('Thank you for your feedback!', 'success')
-    return redirect(url_for('human_index'))
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
