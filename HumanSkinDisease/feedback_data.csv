@@ -1,0 +1,6 @@
+timestamp,image_path,predicted_class,probability,user_feedback
+2025-05-17 09:16:58,static/uploads\acne.jpg,Acne and Rosacea,14.823691546916962,True
+2025-05-17 09:20:11,static/uploads\acne.jpg,Bullous Disease,7.465163618326187,True
+2025-05-17 11:25:15,static/uploads\acne.jpg,Acne and Rosacea,14.823691546916962,True
+2025-05-17 17:01:32,static/uploads\acne.jpg,Acne and Rosacea,14.823691546916962,True
+2025-05-28 11:17:10,static/uploads\ance.jpg,Systemic Disease,18.95429939031601,True

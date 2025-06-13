@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Derma.AI Predictions{% endblock %}
+
+{% block extra_css %}
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+    }
+
+    .options-container {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .option-button {
+        padding: 20px 40px;
+        font-size: 1.4em;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        min-width: 250px;
+        text-decoration: none;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .option-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .option-button.human {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+
+    .option-button.animal {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="options-container">
+        <a href="/humanderma" class="option-button human">Human Skin Analysis</a>
+        <a href="/dogderma" class="option-button animal">Animal Skin Analysis</a>
+    </div>
+</div>
+{% endblock %} 
