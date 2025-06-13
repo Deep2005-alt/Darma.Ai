@@ -217,14 +217,25 @@
         .chart-container {
             margin-top: 30px;
             background: white;
-            padding: 20px;
+            padding: 40px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            width: 100%;
+        }
+
+        .chart-container h3 {
+            margin-bottom: 25px;
+            font-size: 1.6rem;
+            color: #333;
+            text-align: left;
         }
 
         .chart-container img {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0;
         }
 
         .feedback-section {
@@ -257,15 +268,19 @@
 
         .checkbox-item input[type="checkbox"] {
             margin-right: 10px;
-            width: 18px;
-            height: 18px;
+            width: 24px;
+            height: 24px;
             accent-color: #5a5a5a;
+            cursor: pointer;
         }
 
         .checkbox-item label {
             font-weight: 500;
             color: #333;
             cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 24px;
+            vertical-align: middle;
         }
 
         .notes-area {
@@ -605,7 +620,7 @@
         {% endif %}
     </div>
 
-    <!-- Report Modal -->
+   
     <div id="report-modal">
         <div class="report-content">
             <div class="report-header">
@@ -634,7 +649,7 @@
     </div>
 
     <script>
-        // Accordion functionality
+        
         document.querySelectorAll('.accordion-header').forEach(button => {
             button.addEventListener('click', () => {
                 const accordionItem = button.parentNode;
@@ -642,14 +657,14 @@
             });
         });
 
-        // Report generation
+       
         function generateReport() {
             const checkedConditions = Array.from(document.querySelectorAll('input[name="conditions"]:checked'))
                 .map(checkbox => checkbox.value);
             
             const doctorNotes = document.getElementById('doctor-notes').value;
             
-            // Format the current date
+           
             const currentDate = new Date();
             const formattedDate = currentDate.toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -659,24 +674,24 @@
                 minute: '2-digit'
             });
             
-            // Populate report fields
+            
             document.getElementById('report-date').textContent = formattedDate;
             document.getElementById('report-image-id').textContent = '{{ image_url }}'.split('/').pop();
             document.getElementById('report-ai-prediction').textContent = '{{ prediction }}';
             document.getElementById('report-ai-confidence').textContent = '{{ confidence }}%';
             
-            // Set veterinarian's diagnosis
+            
             document.getElementById('report-vet-diagnosis').textContent = 
                 checkedConditions.length > 0 ? checkedConditions.map(c => c.replace('_', ' ')).join(', ') : 'None specified';
             
-            // Set veterinarian's notes
+            
             document.getElementById('report-vet-notes').innerHTML = 
                 doctorNotes ? '<p><strong>Notes:</strong></p><p>' + doctorNotes + '</p>' : '<p>No additional notes provided.</p>';
             
-            // Show the modal
+           
             document.getElementById('report-modal').style.display = 'flex';
             
-            // Submit data to server for record-keeping
+           
             fetch('/submit_feedback', {
                 method: 'POST',
                 headers: {

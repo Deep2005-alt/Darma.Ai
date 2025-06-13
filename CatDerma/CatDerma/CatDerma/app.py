@@ -16,10 +16,10 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Ensure upload directory exists
+
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Define class names for cat skin diseases
+
 class_names = ['Flea_Allergy', 'Health', 'Ringworm', 'Scabies']
 
 class CatSkinDiseasePredictor:
@@ -70,7 +70,7 @@ class CatSkinDiseasePredictor:
         
         return result
 
-# Disease information dictionary
+
 disease_info = {
     "Flea_Allergy": {
         "description": "Flea allergy dermatitis (FAD) is a skin condition in cats caused by an allergic reaction to flea saliva.",
@@ -94,7 +94,7 @@ disease_info = {
     }
 }
 
-# Create feedback CSV file
+
 FEEDBACK_CSV = 'feedback_data.csv'
 if not os.path.exists(FEEDBACK_CSV):
     with open(FEEDBACK_CSV, 'w', newline='') as f:
@@ -116,11 +116,11 @@ def create_chart(probabilities):
     ax.set_xlabel('Probability (%)')
     ax.set_title('Disease Probability')
     
-    # Highlight the highest probability bar
+
     predicted_idx = np.argmax(values)
     bars[predicted_idx].set_color('#8cc084')
     
-    # Add text labels
+
     for i, bar in enumerate(bars):
         width = bar.get_width()
         label_position = width + 1
@@ -128,15 +128,15 @@ def create_chart(probabilities):
                 f'{values[i]:.1f}%', 
                 va='center')
     
-    # Set axis limits
+
     ax.set_xlim(0, 110)
     
-    # Save plot to a bytes buffer
+
     buf = io.BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
     
-    # Encode the bytes buffer to base64
+
     chart_img = base64.b64encode(buf.getvalue()).decode('utf-8')
     buf.close()
     plt.close(fig)
@@ -150,47 +150,46 @@ def home():
 @app.route('/index', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Check if the post request has the file part
+       
         if 'image' not in request.files:
             return render_template('index.html', error="No file part")
         
         file = request.files['image']
         
-        # If user does not select a file, browser also
-        # submit an empty part without filename
+
         if file.filename == '':
             return render_template('index.html', error="No selected file")
         
-        # Save the uploaded file
+        
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
         try:
-            # Initialize model and predict
+           
             model = CatSkinDiseasePredictor('cat_skin_disease_model.pth')
             result = model.predict_image(filepath)
             
             if "error" in result:
                 return render_template('index.html', error=result["error"])
             
-            # Get prediction details
+            
             predicted_class = result['prediction']
             confidence = result['confidence']
             probabilities = result['probabilities']
             
-            # Create visualization
+            
             chart_img = create_chart(probabilities)
             
-            # Get disease information
+            
             disease_description = disease_info.get(predicted_class, {}).get('description', "No information available.")
             disease_symptoms = disease_info.get(predicted_class, {}).get('symptoms', "No symptom information available.")
             disease_treatment = disease_info.get(predicted_class, {}).get('treatment', "No treatment information available.")
             
-            # Pass the results to template
+            
             return render_template('index.html', 
                                    prediction=predicted_class.replace('_', ' '),
-                                   prediction_key=predicted_class,  # For checkbox identification
+                                   prediction_key=predicted_class,  
                                    confidence=f"{confidence:.1f}",
                                    chart_img=chart_img,
                                    image_url=filepath,
@@ -208,12 +207,12 @@ def submit_feedback():
     data = request.json
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    # Extract feedback data
+   
     user_feedback = data.get('user_feedback', {})
     confirmed_conditions = ','.join(user_feedback.get('confirmed_conditions', [])) if isinstance(user_feedback, dict) else ''
     doctor_notes = user_feedback.get('notes', '') if isinstance(user_feedback, dict) else ''
     
-    # Save feedback to CSV
+   
     with open(FEEDBACK_CSV, 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([
